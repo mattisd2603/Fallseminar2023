@@ -11,13 +11,24 @@ import matplotlib.pyplot as plt
 # Eingabeaufforderung für den Benutzer, um den Dateipfad einzugeben
 folder_path = input("Bitte geben Sie den Dateipfad zum Datensazu ein: ")
 
+#Überprüfen, ob der Dateipfad gültig ist. Gültigkeit erfolgt, wenn der Dateiüfad wiefolgt angegeben wurde:
+#"Testdaten/20220809/run2/"
+if os.path.exists(folder_path):
+    print("Der angegebene Pfad ist gültig.")
+else:
+    print("Der angegebene Pfad ist ungültig.")
+    sys.exit()
+
 #Suche nach der Nifti-Datei
 search_pattern_nifti = "*.nii"
 nii_files = glob.glob(folder_path + search_pattern_nifti)
 
 #Überprüfen, ob genau eine NIFTI-Datei gefunden wurde
-if len(nii_files) != 1:
+if len(nii_files) > 1:
     print("Fehler: Es wurde nicht genau eine NIfTI-Datei gefunden.")
+    sys.exit()
+if len(nii_files) < 1:
+    print("Fehler: Es wurde keine NIfTI-Datei gefunden.")
     sys.exit()
 
 #Wenn es nur eine gibt, wird weiter fortgefahren
