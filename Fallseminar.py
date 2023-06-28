@@ -8,8 +8,8 @@ from scipy import interpolate
 from scipy.signal import filtfilt, resample
 import matplotlib.pyplot as plt
 import nipy.modalities.fmri.design_matrix as dm
-import nipy.modalities.fmri.glm.FMRILinearModel as FMRILinearModel
-import nipy.modalities.fmri.glm.GeneralLinearModel as GeneralLinearModel
+from nipy.modalities.fmri.glm import GeneralLinearModel
+from nipy.modalities.fmri.glm import FMRILinearModel
 import logging
 
 LOGGER = logging.getLogger('Fallseminar')
@@ -173,13 +173,13 @@ def plotting_resp_puls(Respiration: list, Puls: list):
 
 def model_design_matrix(design: list):
     #TODO
-    tr = 1.0  # repetition time is 1 second
+    tr = 0.8 # repetition time is 0.8 second
     n_scans = 420  # the acquisition comprises 420*72 scans
     frametimes = np.arange(n_scans) * tr  # here are the corresponding frame times
 
     # TODO Wie erstelle ich die Designmatrix auf Grundlage der 
 
-    design_matrix = dm.make_dmtx(frametimes, paradigm=None, hrf_model='canonical', 
+    design_matrix = dm.make_dmtx(frametimes, paradigm=None, 
                                  add_regs=[puls_prepro], add_reg_names=['Pulse'])
     
     return design_matrix
@@ -190,7 +190,7 @@ def model_glm(mrt_data: list, design_matrix: list):
     cval = np.hstack((1, np.zeros(9))) # TODO Kontrastwerte
     model = GeneralLinearModel(mrt_data)
     model.fit(design_matrix)
-    z_vals = model.contrast(cval).z_score()
+    z_vals = model.contrast(cval).z_score() # Je höher je besser, bei p Werten je niedriger je besser
 
     return 0
 
