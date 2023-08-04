@@ -58,7 +58,8 @@ def search_data(folder_path):
 # mrt_data = Werte eines Volumens in 3D
 def time_stamps_to_image_conformation(slicemap: list, mrt_data: list):
     """
-    Konvertiert Zeitstempelinformationen in die Konformation eines Bildes und verbindet sie mit den MRT-Daten.
+    Konvertiert Zeitstempelinformationen in die Konformation eines Bildes 
+    und verbindet sie mit den MRT-Daten.
 
     Parameter:
     - slicemap: Eine Liste oder ein Array mit den Zeitstempelinformationen.
@@ -67,7 +68,8 @@ def time_stamps_to_image_conformation(slicemap: list, mrt_data: list):
     Rückgabewert:
     Ein 5-dimensionales Array, das die Konformation des Bildes enthält 
     und die Zeitstempelinformationen mit den MRT-Daten verbindet.
-    all_data[x, y, slice, volume, [Wert, Startzeitpunkt der Aufnahme, Endzeitpunkt der Aufnahme]]
+    all_data[x, y, slice, volume, [Wert, Startzeitpunkt der Aufnahme, 
+    Endzeitpunkt der Aufnahme]]
     """
     x, y, slice, volume = mrt_data.shape
     all_data = np.zeros((x, y, slice, volume, 3))
@@ -84,10 +86,12 @@ def time_stamps_to_image_conformation(slicemap: list, mrt_data: list):
 # Spline Interpolation, um die Nullwerte zu entfernen und zu interpolieren
 def spline_interpolation(data: list):
     """
-    Führt eine Spline-Interpolation auf den gegebenen Daten aus, um Nullwerte zu entfernen und zu interpolieren.
+    Führt eine Spline-Interpolation auf den gegebenen Daten aus, 
+    um Nullwerte zu entfernen und zu interpolieren.
 
     Parameter:
-    - data: Eine Liste oder ein Array mit den Daten, auf die die Spline-Interpolation angewendet werden soll.
+    - data: Eine Liste oder ein Array mit den Daten, 
+    auf die die Spline-Interpolation angewendet werden soll.
 
     Rückgabewert:
     Eine interpolierte Version der Daten als Liste oder Array.
@@ -96,6 +100,7 @@ def spline_interpolation(data: list):
     # Maske, die Werte <100 markiert
     mask = (data_new < 100)
     # Interpolationsfunktion
+    # TODO Finite Impulse Response Filter
     spline_function = interpolate.interp1d(
                       np.flatnonzero(~mask), data_new[~mask], 
                       kind='cubic', fill_value="extrapolate")
@@ -106,14 +111,17 @@ def spline_interpolation(data: list):
 # Lowpass moving average Filter + Verschiebung eliminieren
 def lowpass(data: list):
     """
-    Führt einen Tiefpassfilter mit gleitendem Mittelwert auf den gegebenen Daten aus und eliminiert Verschiebungen.
+    Führt einen Tiefpassfilter mit gleitendem Mittelwert auf den gegebenen 
+    Daten aus und eliminiert Verschiebungen.
 
     Parameter:
-    - data: Eine Liste oder ein Array mit den Daten, auf die der Tiefpassfilter angewendet werden soll.
+    - data: Eine Liste oder ein Array mit den Daten, auf die der 
+    Tiefpassfilter angewendet werden soll.
 
     Rückgabewert:
     Eine gefilterte Version der Daten als Liste oder Array.
     """
+    # TODO Samplefrequenz der Daten Betrachten, Samplefrequenz 428 Volumina/345 sec Schandauer = 1,24
     window_size = 100
     b = np.ones(window_size)/window_size
     smooth_data = filtfilt(b, 1, data)
@@ -123,7 +131,8 @@ def lowpass(data: list):
 # TODO Reicht das Downsampling aus?
 def downsample(data: list):
     """
-    Führt eine Abtastung auf den gegebenen Daten durch, um die Anzahl der Datenpunkte zu verringern.
+    Führt eine Abtastung auf den gegebenen Daten durch, 
+    um die Anzahl der Datenpunkte zu verringern.
 
     Parameter:
     - data: Eine Liste oder ein Array mit den Daten, die abgetastet werden sollen.
@@ -190,7 +199,8 @@ def model_glm(mrt_data: list, design_matrix: list):
     cval = np.hstack((1, np.zeros(9))) # TODO Kontrastwerte
     model = GeneralLinearModel(mrt_data)
     model.fit(design_matrix)
-    z_vals = model.contrast(cval).z_score() # Je höher je besser, bei p Werten je niedriger je besser
+    z_vals = model.contrast(cval).z_score() 
+    # Je höher je besser, bei p Werten je niedriger je besser
 
     return 0
 
