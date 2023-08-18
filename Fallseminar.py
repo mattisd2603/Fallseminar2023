@@ -26,6 +26,9 @@ def search_data(folder_path):
     # Wenn es nur eine gibt, wird weiter fortgefahren
     nii_file_path = nii_files[0]
     print("Folgende NIfTI-Datei wurde gefunden:", nii_file_path)
+    # Wenn es nur eine gibt, wird weiter fortgefahren
+    nii_file_path = nii_files[0]
+    print("Folgende NIfTI-Datei wurde gefunden:", nii_file_path)
 
     # Öffnen der Nifti-Datei
     mrt_data = nib.load(nii_file_path).get_fdata()
@@ -63,13 +66,17 @@ def time_stamps_to_image_conformation(slicemap: list, mrt_data: list):
     Parameter:
     - slicemap: Eine Liste oder ein Array mit den Zeitstempelinformationen.
     - mrt_data: Eine Liste oder ein Array mit den MRT-Daten.
-
-    Rückgabewert:
-    Ein 5-dimensionales Array, das die Konformation des Bildes enthält 
-    und die Zeitstempelinformationen mit den MRT-Daten verbindet.
-    all_data[x, y, slice, volume, [Wert, Startzeitpunkt der Aufnahme, 
-    Endzeitpunkt der Aufnahme]]
     """
+
+    # readPhysio aufrufen
+    physio = readCMRRPhysio_1.readCMRRPhysio(physio_file_name)
+
+    return mrt_data, physio
+
+# 10924365 ist der erste aufgenommene Zeitpunkt, ohne ist Start bei 0!
+# slicemap = Zeitpunkte der Aufnahme eines Volumens in 3D
+# mrt_data = Werte eines Volumens in 3D
+def time_stamps_to_image_conformation(slicemap: list, mrt_data: list):
     x, y, slice, volume = mrt_data.shape
     all_data = np.zeros((x, y, slice, volume, 3))
     # Über die Volumes und Slices die beiden Datensätze verbinden
@@ -84,17 +91,6 @@ def time_stamps_to_image_conformation(slicemap: list, mrt_data: list):
 
 # Spline Interpolation, um die Nullwerte zu entfernen und zu interpolieren
 def spline_interpolation(data: list):
-    """
-    Führt eine Spline-Interpolation auf den gegebenen Daten aus, 
-    um Nullwerte zu entfernen und zu interpolieren.
-
-    Parameter:
-    - data: Eine Liste oder ein Array mit den Daten, 
-    auf die die Spline-Interpolation angewendet werden soll.
-
-    Rückgabewert:
-    Eine interpolierte Version der Daten als Liste oder Array.
-    """
     data_new = data
     # Maske, die Werte <100 markiert
     mask = (data_new < 100)
@@ -107,19 +103,8 @@ def spline_interpolation(data: list):
     data_new[mask] = spline_function(np.flatnonzero(mask))
     return data_new
 
-# Lowpass moving average Filter + Verschiebung eliminieren
+#  Lowpass moving average Filter + Verschiebung eliminieren
 def lowpass(data: list):
-    """
-    Führt einen Tiefpassfilter mit gleitendem Mittelwert auf den gegebenen 
-    Daten aus und eliminiert Verschiebungen.
-
-    Parameter:
-    - data: Eine Liste oder ein Array mit den Daten, auf die der 
-    Tiefpassfilter angewendet werden soll.
-
-    Rückgabewert:
-    Eine gefilterte Version der Daten als Liste oder Array.
-    """
     # TODO Samplefrequenz der Daten Betrachten, Samplefrequenz 420 Volumina/345 sec Schandauer = 1,24
     window_size = 100
     b = np.ones(window_size)/window_size
@@ -140,6 +125,8 @@ def downsample(slicemap: list, slice, delay, physiologic_data):
 
 def plotting_resp_puls(Respiration: list, Puls: list): 
 
+    # Erstellen Sie den 2x4 Plotsatz
+    fig, axs = plt.subplots(nrows=2, ncols=4, figsize=(12,6))
     # Erstellen Sie den 2x4 Plotsatz
     fig, axs = plt.subplots(nrows=2, ncols=4, figsize=(12,6))
 
@@ -167,10 +154,38 @@ def plotting_resp_puls(Respiration: list, Puls: list):
     Puls_inter_lowpass_resample = downsample(Puls_inter_lowpass)
     axs[1,3].plot(Puls_inter_lowpass_resample)
     axs[1,3].set_title('PULS Downsample')
+    # Data Plot
+    axs[0,0].plot(Respiration)
+    axs[0,0].set_title('RESP Raw')
+    Respiration_inter = spline_interpolation(Respiration)
+    axs[0,1].plot(Respiration_inter)
+    axs[0,1].set_title('RESP Spline interpolated')
+    Respiration_inter_lowpass = lowpass(Respiration_inter)
+    axs[0,2].plot(Respiration_inter_lowpass)
+    axs[0,2].set_title('RESP Lowpass')
+    Respiration_inter_lowpass_resample = downsample(Respiration_inter_lowpass)
+    axs[0,3].plot(Respiration_inter_lowpass_resample)
+    axs[0,3].set_title('RESP Downsample')
+
+    axs[1,0].plot(Puls)
+    axs[1,0].set_title('PULS Raw')
+    Puls_inter = spline_interpolation(Puls)
+    axs[1,1].plot(Puls_inter)
+    axs[1,1].set_title('PULS Spline interpolated')
+    Puls_inter_lowpass = lowpass(Puls_inter)
+    axs[1,2].plot(Puls_inter_lowpass)
+    axs[1,2].set_title('PULS Lowpass')
+    Puls_inter_lowpass_resample = downsample(Puls_inter_lowpass)
+    axs[1,3].plot(Puls_inter_lowpass_resample)
+    axs[1,3].set_title('PULS Downsample')
 
     # Passt den Abstand zwischen den Plots an
     plt.tight_layout()
+    # Passt den Abstand zwischen den Plots an
+    plt.tight_layout()
 
+    # Zeigt das Ergebnis an
+    plt.show()
     # Zeigt das Ergebnis an
     plt.show()
 
