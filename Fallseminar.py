@@ -5,7 +5,7 @@ import glob
 import sys
 import os 
 from scipy import interpolate
-from scipy.signal import filtfilt, resample
+from scipy.signal import filtfilt
 import matplotlib.pyplot as plt
 import nipy.modalities.fmri.design_matrix as dm
 import nipy.modalities.fmri.glm as glm
@@ -57,21 +57,6 @@ def search_data(folder_path):
 
 # 10924365 ist der erste aufgenommene Zeitpunkt, ohne ist Start bei 0!
 # slicemap = Zeitpunkte der Aufnahme eines Volumens in 3D
-# mrt_data = Werte eines Volumens in 3D
-def time_stamps_to_image_conformation(slicemap: list, mrt_data: list):
-    """
-    Konvertiert Zeitstempelinformationen in die Konformation eines Bildes 
-    und verbindet sie mit den MRT-Daten.
-
-    Parameter:
-    - slicemap: Eine Liste oder ein Array mit den Zeitstempelinformationen.
-    - mrt_data: Eine Liste oder ein Array mit den MRT-Daten.
-    """
-
-    # readPhysio aufrufen
-    physio = readCMRRPhysio_1.readCMRRPhysio(physio_file_name)
-
-    return mrt_data, physio
 
 # 10924365 ist der erste aufgenommene Zeitpunkt, ohne ist Start bei 0!
 # slicemap = Zeitpunkte der Aufnahme eines Volumens in 3D
@@ -105,7 +90,8 @@ def spline_interpolation(data: list):
 
 #  Lowpass moving average Filter + Verschiebung eliminieren
 def lowpass(data: list):
-    # TODO Samplefrequenz der Daten Betrachten, Samplefrequenz 420 Volumina/345 sec Schandauer = 1,24
+    # TODO Samplefrequenz der Daten Betrachten, Samplefrequenz 420 Volumina/345 sec 
+    # Scandauer = 1,24
     window_size = 100
     b = np.ones(window_size)/window_size
     smooth_data = filtfilt(b, 1, data)
@@ -215,7 +201,8 @@ def model_glm(mrt_data, design_matrix):
     binary_mask = image_data[:,:,36] > significance_threshold
     image_data_significant = image_data[:,:,36]*binary_mask
     
-    plt.imshow(image_data_significant)  # Zeige den Querschnitt bei Index 50 in der z-Achse
+    plt.imshow(image_data_significant)  # Zeige den Querschnitt bei Index 
+    # 50 in der z-Achse
     plt.colorbar()
     plt.title('Combined Image')
     plt.show()
