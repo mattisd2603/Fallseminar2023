@@ -9,6 +9,7 @@ from scipy.signal import filtfilt
 import matplotlib.pyplot as plt
 import nipy.modalities.fmri.design_matrix as dm
 import nipy.modalities.fmri.glm as glm
+from nipy.labs.viz_tools.activation_maps import demo_plot_map, plot_anat, plot_map 
 import logging
 
 LOGGER = logging.getLogger('Fallseminar')
@@ -198,13 +199,7 @@ def model_glm(mrt_data, design_matrix):
     image_data = z_image.get_fdata()
     significance_threshold = 3.09
 
-    binary_mask = image_data[:,:,36] > significance_threshold
-    image_data_significant = image_data[:,:,36]*binary_mask
-    
-    plt.imshow(image_data_significant)  # Zeige den Querschnitt bei Index 
-    # 50 in der z-Achse
-    plt.colorbar()
-    plt.title('Combined Image')
+    plot_map(map=image_data, threshold=3.0, do3d=False)
     plt.show()
     return 0
 
