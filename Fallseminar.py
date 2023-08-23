@@ -11,6 +11,7 @@ import nipy.modalities.fmri.design_matrix as dm
 import nipy.modalities.fmri.glm as glm
 from nipy.labs.viz_tools.activation_maps import demo_plot_map, plot_anat, plot_map 
 import logging
+from matplotlib.colors import LinearSegmentedColormap
 
 LOGGER = logging.getLogger('Fallseminar')
 
@@ -33,6 +34,7 @@ def search_data(folder_path):
 
     # Öffnen der Nifti-Datei
     mrt_data = nib.load(nii_file_path).get_fdata()
+    mrt_data_nib = nib.load(nii_file_path)
 
     # Suche nach der Info Datei (egal ob RESP/PULS/Info, der Rest sollte gleich sein)
     search_pattern_physio = "*_Info.log"
@@ -54,7 +56,7 @@ def search_data(folder_path):
     # readPhysio aufrufen
     physio = readCMRRPhysio_1.readCMRRPhysio(physio_file_name)
 
-    return mrt_data, physio
+    return mrt_data, mrt_data_nib, physio
 
 # 10924365 ist der erste aufgenommene Zeitpunkt, ohne ist Start bei 0!
 # slicemap = Zeitpunkte der Aufnahme eines Volumens in 3D
@@ -196,16 +198,24 @@ def model_glm(mrt_data, design_matrix):
     model.fit()
     # Je höher je besser, bei p Werten je niedriger je besser
     z_image, effect_image = model.contrast(np.ones(6), output_effects = True)
-    image_data = z_image.get_fdata()
-    significance_threshold = 3.09
 
-    plot_map(map=image_data, threshold=3.0, do3d=False)
+    image_data = z_image.get_fdata()
+    significance_threshold = 10
+    colors = [(1, 1, 0), (1, 0, 0)]
+    activation_cmap = LinearSegmentedColormap.from_list('activation_cmap', colors, N=256)
+    thresholded_activation_map = np.where(image_data[:,:,36] >= significance_threshold, image_data[:,:,36], np.nan)
+
+    background_data = mrt_data.get_fdata()
+
+    plt.imshow(background_data[:,:,36,15], cmap='gray')
+    plt.imshow(thresholded_activation_map, cmap=activation_cmap, alpha=0.7)
+    plt.axis('off')
     plt.show()
     return 0
 
 # Eingabeaufforderung für den Benutzer, um den Dateipfad einzugeben
 folder_path = input("Bitte geben Sie den Dateipfad zum Datensazu ein: ")
-mrt_data, physio = search_data(folder_path)
+mrt_data, mrt_data_nib, physio = search_data(folder_path)
 
 physioUUID = physio['UUID']    
 physioFreq = physio['Freq']
@@ -241,7 +251,6 @@ design_matrix = model_design_matrix(downsamled_data)
 print(design_matrix[0])
 mrt_data_transposed = np.transpose(mrt_data[:, :, 36, :], (2, 0, 1))
 mrt_data_transposed_reshaped = mrt_data_transposed.reshape(420, -1)
-mrt_data_nib = nib.Nifti1Image(mrt_data, affine=None)
 print(mrt_data_transposed_reshaped.shape)
 
 model_glm(mrt_data_nib, design_matrix[0])
