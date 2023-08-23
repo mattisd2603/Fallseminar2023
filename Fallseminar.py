@@ -104,7 +104,8 @@ def lowpass(data: list):
 
 def downsample(slicemap: list, slice, delay, physiologic_data):
     resample_physio = np.zeros(420)
-    for i in range(420):
+    #400 statt 420 nur wegen out of range
+    for i in range(400):
         time_start = slicemap[0, i, slice]
         time_end = slicemap[1, i, slice]
         time_mw = int((time_end+time_start)/2)
@@ -200,7 +201,7 @@ def model_glm(mrt_data, design_matrix):
     z_image, effect_image = model.contrast(np.ones(6), output_effects = True)
 
     image_data = z_image.get_fdata()
-    p_value = 0.001
+    p_value = 0.01
     significance_threshold = stats.norm.ppf(1 - p_value/2)
     print(significance_threshold)
     colors = [(1, 1, 0), (1, 0, 0)]
@@ -232,10 +233,10 @@ LOGGER.info(f"FMRI Data time ticks:      {mrt_data.shape}")
 
 
 puls_prepro = lowpass(spline_interpolation(Puls))
-
-downsamled_data = downsample(physioSliceMap, 36, 0, puls_prepro)
-
 resp_prepro = lowpass(spline_interpolation(Respiration))
+
+#delay 400 = 1sec
+downsamled_data = downsample(physioSliceMap, 36, 0, resp_prepro)
 
 design_matrix = model_design_matrix(downsamled_data)
 
