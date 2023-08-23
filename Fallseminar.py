@@ -6,6 +6,7 @@ import sys
 import os 
 from scipy import interpolate
 from scipy.signal import filtfilt
+import scipy.stats as stats
 import matplotlib.pyplot as plt
 import nipy.modalities.fmri.design_matrix as dm
 import nipy.modalities.fmri.glm as glm
@@ -100,7 +101,6 @@ def lowpass(data: list):
     smooth_data = filtfilt(b, 1, data)
     smooth_data = smooth_data-np.mean(smooth_data)
     return smooth_data
-
 
 def downsample(slicemap: list, slice, delay, physiologic_data):
     resample_physio = np.zeros(420)
@@ -200,7 +200,9 @@ def model_glm(mrt_data, design_matrix):
     z_image, effect_image = model.contrast(np.ones(6), output_effects = True)
 
     image_data = z_image.get_fdata()
-    significance_threshold = 10
+    p_value = 0.001
+    significance_threshold = stats.norm.ppf(1 - p_value/2)
+    print(significance_threshold)
     colors = [(1, 1, 0), (1, 0, 0)]
     activation_cmap = LinearSegmentedColormap.from_list('activation_cmap', colors, N=256)
     thresholded_activation_map = np.where(image_data[:,:,36] >= significance_threshold, image_data[:,:,36], np.nan)
@@ -248,9 +250,5 @@ design_matrix = model_design_matrix(downsamled_data)
 
 # Das Ergebnis anzeigen
 #plt.show()
-print(design_matrix[0])
-mrt_data_transposed = np.transpose(mrt_data[:, :, 36, :], (2, 0, 1))
-mrt_data_transposed_reshaped = mrt_data_transposed.reshape(420, -1)
-print(mrt_data_transposed_reshaped.shape)
 
 model_glm(mrt_data_nib, design_matrix[0])
