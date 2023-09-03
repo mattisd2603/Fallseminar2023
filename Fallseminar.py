@@ -210,6 +210,9 @@ def model_glm(mrt_data, design_matrix):
 
     background_data = mrt_data.get_fdata()
 
+    contrast_map = model.c
+    p_value_map = contrast_map.p_value()
+
     plt.imshow(background_data[:,:,36,15], cmap='gray')
     plt.imshow(thresholded_activation_map, cmap=activation_cmap, alpha=0.7)
     plt.axis('off')
