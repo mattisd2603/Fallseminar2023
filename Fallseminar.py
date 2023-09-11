@@ -92,7 +92,7 @@ def spline_interpolation(data: list):
     data_new[mask] = spline_function(np.flatnonzero(mask))
     return data_new
 
-#  Lowpass moving average Filter + Verschiebung eliminieren
+# Lowpass moving average Filter + Verschiebung eliminieren
 def lowpass(data: list):
     # TODO Samplefrequenz der Daten Betrachten, Samplefrequenz 420 Volumina/345 sec 
     # Scandauer = 1,24
@@ -188,31 +188,34 @@ def model_design_matrix(design: list):
     # TODO Wie erstelle ich die Designmatrix auf Grundlage der 
 
     design_matrix = dm.dmtx_light(frametimes, paradigm=None, 
-                                 add_regs=design, add_reg_names=['Pulse'])
+                                 add_regs=design, add_reg_names=['Puls'])
     
-    return design_matrix
+    design_matrix_show = dm.make_dmtx(frametimes, paradigm=None, 
+                                 add_regs=design, add_reg_names=['Puls'])
+    
+    return design_matrix, design_matrix_show
     
 def model_glm(mrt_data, design_matrix):
-    # TODO Wie modelliere ich richtig für unsere Daten? Wie kann ich die 
-    # unterschiedlichen Timestamps mit implemeniteren?
+    # Model erstellen
     model = glm.FMRILinearModel(mrt_data, design_matrix)
     model.fit()
-    # Je höher je besser, bei p Werten je niedriger je besser
-    z_image, effect_image = model.contrast(np.ones(6), output_effects = True)
 
+    # Kontrastbilder generieren
+    # z Werte: Je höher je besser, bei p Werten je niedriger je besser
+    z_image, effect_image = model.contrast(np.ones(6), output_effects = True)
     image_data = z_image.get_fdata()
+
+    # Signifikante Punkte extrahieren
     p_value = 0.01
     significance_threshold = stats.norm.ppf(1 - p_value/2)
-    print(significance_threshold)
     colors = [(1, 1, 0), (1, 0, 0)]
     activation_cmap = LinearSegmentedColormap.from_list('activation_cmap', colors, N=256)
     thresholded_activation_map = np.where(image_data[:,:,36] >= significance_threshold, image_data[:,:,36], np.nan)
 
+    # Hintergrundbild
     background_data = mrt_data.get_fdata()
 
-    contrast_map = model.c
-    p_value_map = contrast_map.p_value()
-
+    # Signifikanzbild anzeigen lassen
     plt.imshow(background_data[:,:,36,15], cmap='gray')
     plt.imshow(thresholded_activation_map, cmap=activation_cmap, alpha=0.7)
     plt.axis('off')
@@ -234,25 +237,27 @@ LOGGER.info(f"Respiration time ticks:      {Respiration.shape}")
 LOGGER.info(f"Puls time ticks:      {Puls.shape}")
 LOGGER.info(f"FMRI Data time ticks:      {mrt_data.shape}")
 
-
+# Vorverarbeitung
 puls_prepro = lowpass(spline_interpolation(Puls))
 resp_prepro = lowpass(spline_interpolation(Respiration))
 
-#delay 400 = 1sec
-downsamled_data = downsample(physioSliceMap, 36, 0, resp_prepro)
+# delay 400 = 1sec
+# Downsampling
+downsamled_data = downsample(physioSliceMap, 36, 0, puls_prepro)
 
-design_matrix = model_design_matrix(downsamled_data)
+# Design Matrix erstellen
+design_matrix, design_matrix_show = model_design_matrix(downsamled_data)
 
 # Designmatrix anzeigen
-#design_matrix.show()
-#print(design_matrix[0].shape)
-#print(mrt_data[:,:,36, :].shape)
+# design_matrix_show.show()
 # Optional: Titel und Achsenbeschriftungen hinzufügen
-#plt.title('Designmatrix')
-#plt.xlabel('Zeit')
-#plt.ylabel('Regressor-Werte')
+# plt.title('Designmatrix')
+# plt.xlabel('Zeit')
+# plt.ylabel('Regressor-Werte')
+# plt.show()
 
 # Das Ergebnis anzeigen
-#plt.show()
+# plt.show()
 
+# GLM berechnen
 model_glm(mrt_data_nib, design_matrix[0])
